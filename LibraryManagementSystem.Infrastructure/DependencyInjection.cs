@@ -3,6 +3,7 @@ using LibraryManagementSystem.Domain.Entities;
 using LibraryManagementSystem.Infrastructure.Auth;
 using LibraryManagementSystem.Infrastructure.Persistence;
 using LibraryManagementSystem.Infrastructure.Persistence.Repositories;
+using LibraryManagementSystem.Infrastructure.Reports;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IBorrowRecordRepository, BorrowRecordRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<IReportsRepository, ReportsRepository>();
+        services.AddScoped<IReportExportService, ReportExportService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 

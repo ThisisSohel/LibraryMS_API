@@ -38,4 +38,29 @@ public class ReportsController : ControllerBase
         var result = await _sender.Send(new GetBranchInventorySummaryReportQuery(), cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("overdue-books/export")]
+    public async Task<IActionResult> ExportOverdueBooks(
+        [FromQuery] int? branchId, [FromQuery] ReportExportFormat format, CancellationToken cancellationToken)
+    {
+        var file = await _sender.Send(new ExportOverdueBooksReportQuery(branchId, format), cancellationToken);
+        return File(file.Content, file.ContentType, file.FileName);
+    }
+
+    [HttpGet("most-borrowed-books/export")]
+    public async Task<IActionResult> ExportMostBorrowedBooks(
+        [FromQuery] int? branchId, [FromQuery] ReportExportFormat format, [FromQuery] int top = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var file = await _sender.Send(new ExportMostBorrowedBooksReportQuery(branchId, top, format), cancellationToken);
+        return File(file.Content, file.ContentType, file.FileName);
+    }
+
+    [HttpGet("branch-inventory-summary/export")]
+    public async Task<IActionResult> ExportBranchInventorySummary(
+        [FromQuery] ReportExportFormat format, CancellationToken cancellationToken)
+    {
+        var file = await _sender.Send(new ExportBranchInventorySummaryReportQuery(format), cancellationToken);
+        return File(file.Content, file.ContentType, file.FileName);
+    }
 }

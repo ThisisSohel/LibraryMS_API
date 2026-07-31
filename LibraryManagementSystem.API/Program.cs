@@ -5,7 +5,12 @@ using LibraryManagementSystem.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 using Serilog;
+
+// QuestPDF Community license: free for teams/companies under $1M annual gross revenue
+// (our case here) — see https://www.questpdf.com/license/overview.html
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 

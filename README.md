@@ -14,6 +14,8 @@ The frontend (React/Angular/Vue/Blazor) is a separate, upcoming piece of work an
 - JWT Bearer authentication + role-based authorization (`Microsoft.AspNetCore.Identity.PasswordHasher` for password hashing)
 - Swagger / OpenAPI (Swashbuckle), with a Bearer-token button wired up for testing protected endpoints
 - Centralized exception-handling middleware (no per-endpoint try/catch)
+- Optimistic concurrency on book-copy stock, using Postgres's `xmin` system column as the EF Core row-version token
+- ClosedXML (Excel) and QuestPDF (PDF) for report exports
 
 ## Project structure
 
@@ -109,7 +111,7 @@ All endpoints except `POST /api/auth/login` require a `Bearer` JWT. Branch mutat
 | Members | `/api/members` | CRUD, search, branch filter, pagination |
 | Borrow & Return | `/api/borrowrecords` | checkout, `POST /{id}/return`, filterable list |
 | Reservations | `/api/reservations` | create, `POST /{id}/cancel`, `POST /{id}/fulfill`, filterable list |
-| Reports | `/api/reports` | `overdue-books`, `most-borrowed-books`, `branch-inventory-summary` (read-only) |
+| Reports | `/api/reports` | `overdue-books`, `most-borrowed-books`, `branch-inventory-summary` (read-only); each also has a `GET /{report}/export?format=xlsx\|pdf` variant |
 
 Full request/response shapes are in Swagger.
 
@@ -129,9 +131,12 @@ The brief allows — and explicitly asks for — documenting reasonable assumpti
 - **One active borrow per member per book**, and **one active reservation per member per book/branch**, enforced at the application layer.
 - **`ProcessedByUserId`** on borrow/return and reservation-fulfillment actions is derived from the caller's JWT identity, never accepted from the request body — a client cannot attribute a transaction to a different staff user.
 - **Pagination is bounded** (`pageSize` capped at 100) on every list endpoint, to prevent a single request from pulling an entire table.
+- **Optimistic concurrency uses Postgres's `xmin` system column** as the EF Core concurrency token on `BookCopy`, rather than a hand-rolled `RowVersion` column — it needs no schema change (the column already exists on every table) and is the idiomatic approach on Postgres. Two concurrent borrow/return/fulfil/add-copy requests against the same (book, branch) stock row now produce one success and one `409 Conflict` ("This record was changed by another request. Please retry.") instead of a silently lost update.
+- **Report exports are generated on-demand**, not cached or queued — each `GET /{report}/export` call re-runs the same query the list endpoint uses and streams the file back synchronously. Fine at this data scale; would need to move to a background job for very large exports.
+- **QuestPDF's Community license** (free for organizations under $1M annual gross revenue) is used for PDF generation — set once at startup in `Program.cs`. Would need a commercial license for a business above that threshold.
 
 ### Explicitly out of scope this round
 
-Per the brief's bonus list, only **CQRS, Domain Events, Optimistic Concurrency, Redis, and Excel/PDF Export** were selected as in-scope bonus features for this round; of those, only **CQRS** (via MediatR, used throughout) is implemented so far. **API Versioning, Health Checks, Docker, Background Jobs, Email Notifications, and CI/CD Pipeline** were deliberately excluded this round to focus on a smaller set of features implemented well, rather than stretching thin across all of them. They may be added in a later iteration.
+Per the brief's bonus list, only **CQRS, Domain Events, Optimistic Concurrency, Redis, and Excel/PDF Export** were selected as in-scope bonus features for this round; of those, **CQRS** (via MediatR, used throughout), **Optimistic Concurrency** (Postgres `xmin` on `BookCopy`), and **Excel/PDF Export** (Reports module) are implemented. **Domain Events** and **Redis** are not yet started. **API Versioning, Health Checks, Docker, Background Jobs, Email Notifications, and CI/CD Pipeline** were deliberately excluded this round to focus on a smaller set of features implemented well, rather than stretching thin across all of them. They may be added in a later iteration.
 
 Unit tests were also deferred this round (see **How to run tests** above).

@@ -36,7 +36,7 @@ public class ExceptionHandlingMiddleware
             NotFoundException => (HttpStatusCode.NotFound, exception.Message, null),
             ConflictException => (HttpStatusCode.Conflict, exception.Message, null),
 
-            // This is the important part. When two requests try to borrow/return/fulfil the same (book, branch) stock row at the same time, one of them will get a DbUpdateConcurrencyException.
+            // I added this important part. When two requests try to borrow/return/fulfil the same (book, branch) stock row at the same time, one of them will get a DbUpdateConcurrencyException.
             DbUpdateConcurrencyException => (
                 HttpStatusCode.Conflict,
                 "This record was changed by another request. Please retry.",

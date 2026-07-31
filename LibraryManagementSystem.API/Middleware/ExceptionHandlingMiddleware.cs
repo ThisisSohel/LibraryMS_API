@@ -2,11 +2,10 @@ using System.Net;
 using System.Text.Json;
 using LibraryManagementSystem.Application.Common.Exceptions;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibraryManagementSystem.API.Middleware;
 
-// Catches exceptions from anywhere in the request pipeline so controllers/handlers
-// don't need their own try/catch blocks, and turns them into a consistent JSON error shape.
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
@@ -36,6 +35,12 @@ public class ExceptionHandlingMiddleware
         {
             NotFoundException => (HttpStatusCode.NotFound, exception.Message, null),
             ConflictException => (HttpStatusCode.Conflict, exception.Message, null),
+
+            // This is the important part. When two requests try to borrow/return/fulfil the same (book, branch) stock row at the same time, one of them will get a DbUpdateConcurrencyException.
+            DbUpdateConcurrencyException => (
+                HttpStatusCode.Conflict,
+                "This record was changed by another request. Please retry.",
+                null),
             UnauthorizedException => (HttpStatusCode.Unauthorized, exception.Message, null),
             ValidationException validationException => (
                 HttpStatusCode.BadRequest,

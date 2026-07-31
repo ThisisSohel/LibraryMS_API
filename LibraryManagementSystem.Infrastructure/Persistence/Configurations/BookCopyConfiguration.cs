@@ -22,5 +22,9 @@ public class BookCopyConfiguration : IEntityTypeConfiguration<BookCopy>
 
         builder.Property(bc => bc.CreatedBy).HasMaxLength(100);
         builder.Property(bc => bc.UpdatedBy).HasMaxLength(100);
+
+        // I am putting the Guards against lost updates when two requests borrow/return/fulfil against
+        // So, the same (book, branch) stock row at the same time.
+        builder.UseXminAsConcurrencyToken();
     }
 }
